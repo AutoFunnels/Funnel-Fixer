@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EHM Funnel Audit Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --dark-blue: #4a5daa;
+  --purple: #aa91c2;
+  --light-green: #a1d6b7;
+  --white: #ffffff;
+  --bg: #f5f6fa;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --border: #e2e4ef;
+  --high: #d94f4f;
+  --medium: #e07b2a;
+  --low: #438173;
+  --radius: 12px;
+}
+body {
+  font-family: 'Lato', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  background: var(--dark-blue);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo-mark {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--light-green);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px;
+  color: var(--dark-blue); flex-shrink: 0; letter-spacing: -0.5px;
+}
+.logo-text { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px; color: var(--white); letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.1; }
+.logo-tagline { font-family: 'Lato', sans-serif; font-weight: 300; font-size: 11px; color: rgba(255,255,255,0.6); }
+.progress-bar-wrap { background: rgba(255,255,255,0.15); border-radius: 99px; height: 4px; flex: 1; max-width: 200px; margin-left: auto; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--light-green); border-radius: 99px; transition: width 0.4s ease; }
+.progress-label { font-size: 11px; color: rgba(255,255,255,0.6); white-space: nowrap; margin-left: 8px; }
+.chat-container { flex: 1; max-width: 720px; margin: 0 auto; width: 100%; padding: 24px 16px 120px; display: flex; flex-direction: column; gap: 16px; }
+.bubble-wrap { display: flex; flex-direction: column; gap: 4px; animation: fadeUp 0.3s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.bubble-wrap.user { align-items: flex-end; }
+.bubble-wrap.bot { align-items: flex-start; }
+.bubble-label { font-size: 11px; color: var(--text-muted); padding: 0 4px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.bubble { max-width: 85%; padding: 14px 18px; border-radius: var(--radius); font-size: 15px; line-height: 1.65; }
+.bubble.user { background: var(--dark-blue); color: var(--white); border-bottom-right-radius: 4px; }
+.bubble.bot { background: var(--white); color: var(--text); border: 0.5px solid var(--border); border-bottom-left-radius: 4px; }
+.bubble h3 { font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: var(--dark-blue); margin-bottom: 12px; }
+.bubble p { margin-bottom: 8px; }
+.bubble p:last-child { margin-bottom: 0; }
+.priority-section { margin: 8px 0; }
+.priority-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+.badge-high { background: #fce8e8; color: var(--high); }
+.badge-medium { background: #fef0e3; color: var(--medium); }
+.badge-low { background: #e3f4ec; color: var(--low); }
+.roadmap-item { background: var(--bg); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid transparent; }
+.roadmap-item.high { border-left-color: var(--high); }
+.roadmap-item.medium { border-left-color: var(--medium); }
+.roadmap-item.low { border-left-color: var(--low); }
+.roadmap-item .item-area { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 700; margin-bottom: 3px; }
+.roadmap-item .item-text { font-size: 14px; line-height: 1.5; color: var(--text); }
+.choices-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.choice-btn { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; font-family: 'Lato', sans-serif; color: var(--text); cursor: pointer; text-align: left; transition: all 0.15s ease; line-height: 1.4; }
+.choice-btn:hover { border-color: var(--dark-blue); background: #eef0f8; color: var(--dark-blue); }
+.choice-btn.selected { border-color: var(--dark-blue); background: var(--dark-blue); color: var(--white); }
+.choice-btn:disabled { cursor: default; }
+.input-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 16px; z-index: 50; }
+.input-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
+.input-inner textarea { flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-family: 'Lato', sans-serif; font-size: 14px; resize: none; outline: none; min-height: 42px; max-height: 120px; line-height: 1.5; transition: border-color 0.15s; }
+.input-inner textarea:focus { border-color: var(--dark-blue); }
+.send-btn { width: 42px; height: 42px; border-radius: 10px; background: var(--dark-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+.send-btn:hover { background: #3a4d9a; }
+.send-btn:disabled { background: var(--border); cursor: not-allowed; }
+.send-btn svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.typing-dots { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
+.typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--purple); animation: dot-bounce 1.2s ease-in-out infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-5px); opacity: 1; } }
+.section-divider { text-align: center; font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin: 4px 0; display: flex; align-items: center; gap: 10px; }
+.section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.audit-complete-banner { background: var(--dark-blue); color: white; border-radius: var(--radius); padding: 20px 24px; text-align: center; margin: 8px 0; }
+.audit-complete-banner h2 { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.audit-complete-banner p { font-size: 14px; opacity: 0.85; }
+.pill-group { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+.pill { border-radius: 99px; padding: 4px 12px; font-size: 12px; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-mark">EHM</div>
+  <div>
+    <div class="logo-text">Elevate Her Marketing</div>
+    <div class="logo-tagline">Funnel Audit Tool</div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-label" id="progressLabel">0 / 20</div>
+</header>
+<div class="chat-container" id="chatContainer"></div>
+<div class="input-footer">
+  <div class="input-inner">
+    <textarea id="userInput" placeholder="Ask a follow-up question..." rows="1" disabled></textarea>
+    <button class="send-btn" id="sendBtn" disabled>
+      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+<script>
+const QUESTIONS = [
+  { id:"email_subs", section:"Marketing", text:"How many email subscribers do you have?",
+    choices:["Less than 500","500–1k","1k–2k","2k–5k","5k–10k","10k–20k","20k–30k","30k–50k","50k+"],
+    score:(v)=>{
+      if(["Less than 500","500–1k","1k–2k","2k–5k"].includes(v)) return {priority:"high",advice:"Your email list is fairly small for selling a digital product. Focus heavily on growing it — organic methods if you have time, paid ads if not."};
+      if(["5k–10k","10k–20k","20k–30k"].includes(v)) return {priority:"medium",advice:"You have a decent email list. Keep growing it, but it doesn't need to be your main focus right now."};
+      return {priority:"low",advice:"You've got a solid email list. Focus on other areas of your funnel — just keep your list engaged."};
+    }
+  },
+  { id:"ig_followers", section:"Marketing", text:"How many Instagram followers do you have?",
+    choices:["Less than 2k","2k–5k","5k–10k","10k–20k","20k–30k","30k–40k","40k–50k","50k+"],
+    score:(v)=>{
+      if(["Less than 2k","2k–5k"].includes(v)) return {priority:"high",advice:"Selling a digital product is a numbers game — the lower your price point, the more followers you need. Focus on growing your Instagram community."};
+      if(["5k–10k","10k–20k","20k–30k","30k–40k"].includes(v)) return {priority:"medium",advice:"You have a decent following. Keep working on it, but it doesn't need to be your primary focus."};
+      return {priority:"low",advice:"You have a solid Instagram following. Focus energy on other areas of your marketing funnel."};
+    }
+  },
+  { id:"has_product", section:"Funnel", text:"Do you have an online course or product priced at $2k or under that people can purchase after consuming your top-of-funnel offer?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"You're set up to generate solid revenue from your funnel."};
+      return {priority:"medium",advice:"You need a product to sell after your top-of-funnel offer to see meaningful revenue. Even a lower-priced product makes a big difference — these funnels don't drive enough revenue on lead generation alone."};
+    }
+  },
+  { id:"monthly_revenue", section:"Funnel", text:"How much revenue are you generating per month from this funnel?",
+    choices:["Less than $1k","$1k–$2.5k","$2.5k–$5k","$5k–$10k","$10k–$20k","$20k–$30k","$30k–$40k","$40k+"],
+    score:(v)=>{
+      if(["Less than $1k","$1k–$2.5k","$2.5k–$5k"].includes(v)) return {priority:"high",advice:"You have a lot of room to grow. Follow this roadmap and optimize step by step — the revenue potential is there."};
+      if(["$5k–$10k","$10k–$20k","$20k–$30k"].includes(v)) return {priority:"medium",advice:"You're generating solid revenue — now it's time to scale. Tackle the high priority items in this roadmap first."};
+      return {priority:"low",advice:"You're generating strong funnel revenue. Focus on increasing your Average Order Value (AOV) to take things to the next level."};
+    }
+  },
+  { id:"funnel_cvr", section:"Funnel", text:"What is your funnel conversion rate over the last 3 months?",
+    choices:["0–0.5%","0.5–1%","1–1.5%","1.5–2%","2–3%","3–5%","5–7.5%","7.5%+","I don't know"],
+    score:(v)=>{
+      if(["0–0.5%","0.5–1%","1–1.5%","1.5–2%"].includes(v)) return {priority:"high",advice:"If targeting warm audiences, this is very concerning — work on funnel optimization immediately. If targeting cold audiences, it's still below benchmark with a lot of room to improve."};
+      if(["2–3%","3–5%"].includes(v)) return {priority:"medium",advice:"If you're targeting cold audiences, this is solid. If warm-only, you have work to do on improving this number."};
+      if(v==="I don't know") return {priority:"high",advice:"You need to know your conversion rate — it's one of the most important metrics for a digital funnel. Start tracking this immediately."};
+      return {priority:"low",advice:"Great conversion rate. Whether cold or warm audiences, you're doing a lot right."};
+    }
+  },
+  { id:"nurturing", section:"Funnel", text:"Are you consistently nurturing your leads with non-sales content related to your product?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"Keep it up. Consistent nurturing builds stronger relationships and increases conversions over time."};
+      return {priority:"high",advice:"If you're not nurturing leads, you're leaving money on the table. Start small and grow your process — but this needs to be a consistent priority."};
+    }
+  },
+  { id:"webinar_access", section:"Webinar", text:"How do leads access your webinar after opting in?",
+    choices:["On the Thank You Page","Via email link only","Both (Thank You Page + Email)","Inside a membership portal","Via a private community"],
+    score:(v)=>{
+      if(v==="Via email link only") return {priority:"low",advice:"This is the ideal setup. Having leads go to their email inbox ensures they've given a working email and engages them with your list from day one."};
+      return {priority:"high",advice:"Ideally your webinar should only be accessible via email link. This is critical for email deliverability and ensures leads are engaging with your email list — which is how you sell to them long-term."};
+    }
+  },
+  { id:"webinar_view_rate", section:"Webinar", text:"What's your webinar view rate over the last 3 months?",
+    choices:["Less than 10%","10–20%","20–30%","30–40%","Over 50%","I don't know"],
+    score:(v)=>{
+      if(["Less than 10%","10–20%"].includes(v)) return {priority:"high",advice:"This is low. Increase email reminders and consider incentives to get people to watch. Your webinar is your main selling tool — this needs immediate attention."};
+      if(["20–30%","30–40%"].includes(v)) return {priority:"medium",advice:"You're doing okay. Try to improve this after tackling other high priority items — your webinar is your selling tool so it matters."};
+      if(v==="I don't know") return {priority:"high",advice:"This is a critical metric. If your platform doesn't track it, it's time to invest in one that does."};
+      return {priority:"low",advice:"You're getting plenty of people to your webinar. That's worth recognizing."};
+    }
+  },
+  { id:"pitch_watch_rate", section:"Webinar", text:"What % of webinar viewers stay long enough to watch the sales pitch?",
+    choices:["Less than 10%","10–20%","20–30%","30–40%","Over 40%","I don't know"],
+    score:(v)=>{
+      if(["Less than 10%","10–20%"].includes(v)) return {priority:"high",advice:"You've done all the work to get people to your webinar — they need to stay until the pitch. Improving this should be at the top of your list."};
+      if(["20–30%","30–40%"].includes(v)) return {priority:"medium",advice:"Pretty good, but try to improve it. Consider shortening the webinar, adding incentives to watch through, or reviewing your drop-off point."};
+      if(v==="I don't know") return {priority:"high",advice:"If you don't know how long people are watching, you have no idea if your webinar is working. Start tracking this."};
+      return {priority:"low",advice:"You're getting a strong portion of viewers to the sales pitch. Focus on other priority areas."};
+    }
+  },
+  { id:"webinar_length", section:"Webinar", text:"How long is your webinar?",
+    choices:["Under 30 min","30–45 min","45–60 min","60–90 min","Over 90 min"],
+    score:(v)=>{
+      if(["Under 30 min","30–45 min"].includes(v)) return {priority:"low",advice:"Webinar length matters less than conversion rate. If people are converting at a good rate, you're fine. If not, a shorter webinar usually helps unless your product is over $1k."};
+      if(v==="45–60 min") return {priority:"medium",advice:"Try to keep it under 45 minutes if your conversion rate is suffering. Under 60 is the ceiling for most audiences."};
+      return {priority:"high",advice:"Over 60 minutes is likely too long for today's audiences. Edit out filler and aim for under 45 minutes unless your product is over $1,000 and requires a longer pitch."};
+    }
+  },
+  { id:"optin_cvr", section:"Opt-in Page", text:"What is your opt-in page conversion rate over the last 3 months?",
+    choices:["Less than 20%","20–25%","25–30%","30–35%","35–40%","Over 40%","I don't know"],
+    score:(v)=>{
+      if(["Less than 20%","20–25%","25–30%"].includes(v)) return {priority:"high",advice:"Your opt-in rate is low. Small changes here — headline, copy, button placement — can have a big impact on the number of leads entering your funnel."};
+      if(["30–35%","35–40%"].includes(v)) return {priority:"medium",advice:"You're close to benchmark. Keep working on it but don't stress — you're in a reasonable range."};
+      if(v==="I don't know") return {priority:"high",advice:"Get this data. Small adjustments to your opt-in page can have a huge impact on overall funnel results."};
+      return {priority:"low",advice:"Your opt-in page is performing really well."};
+    }
+  },
+  { id:"optin_mobile", section:"Opt-in Page", text:"Is your opt-in landing page mobile optimized?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"Most people browse on phones — great that you've covered this."};
+      return {priority:"high",advice:"Fix this immediately. The majority of people consume content on phones. Your pages need to work on all screen sizes."};
+    }
+  },
+  { id:"has_email_sequence", section:"Email", text:"Do you have an email sequence after opt-in that encourages leads to watch your webinar or consume your lead magnet?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"Good — reminding people to consume what they signed up for is essential. People get busy and forget."};
+      return {priority:"high",advice:"You need this. Without follow-up emails, most people who opt in will never watch your webinar. This is directly connected to your sales."};
+    }
+  },
+  { id:"email_sequence_count", section:"Email", text:"How many emails are in your post opt-in sequence?",
+    choices:["1–2 emails","3–4 emails","5–6+ emails"],
+    score:(v)=>{
+      if(v==="1–2 emails") return {priority:"high",advice:"Add more emails — aim for 5 or 6. People need multiple reminders to consume content in today's busy world."};
+      if(v==="3–4 emails") return {priority:"medium",advice:"Pretty good, but 5–6 emails is the target to really drive people to consume your lead magnet."};
+      return {priority:"low",advice:"Outstanding. This will ensure as many leads as possible consume your content and move further along in their journey."};
+    }
+  },
+  { id:"has_sales_sequence", section:"Email", text:"Do you have a sales email sequence that pitches your product?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"You're pitching your product to your leads via email. That's how sales happen."};
+      return {priority:"high",advice:"This is a major gap. Leads take longer than ever to convert and they need to be reminded via email that your product exists and what it will do for them. Add a sales sequence as soon as possible."};
+    }
+  },
+  { id:"sales_email_count", section:"Email", text:"How many emails are in your sales sequence?",
+    choices:["1–3 emails","4–5 emails","6+ emails"],
+    score:(v)=>{
+      if(v==="1–3 emails") return {priority:"high",advice:"Add more. Your audience needs to be fully convinced before they buy. Consider adding: a customer story, objection handling, FAQs, transformation focus, and multiple formats of testimonials."};
+      if(v==="4–5 emails") return {priority:"medium",advice:"Good start. Aim for 6+ — a couple more emails can meaningfully increase conversions without feeling spammy."};
+      return {priority:"low",advice:"You have a robust sales sequence that is likely doing good work on conversions."};
+    }
+  },
+  { id:"weekly_nurture", section:"Email", text:"Are you sending weekly nurture emails to leads after they complete your sequences?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"Your email strategy is working over time and likely converting leads weeks or months after they first discovered you."};
+      return {priority:"high",advice:"Leads — especially on products over $500 — can take 15, 30, even 60+ days to convert. They won't buy if you disappear after your sequence ends. Ongoing nurture is essential."};
+    }
+  },
+  { id:"has_sales_page", section:"Sales Page", text:"Do you have a dedicated sales page for your digital product?",
+    choices:["Yes","No"],
+    score:(v)=>{
+      if(v==="Yes") return {priority:"low",advice:"A dedicated sales page gives leads a place to go deep on the details before purchasing. Good."};
+      return {priority:"high",advice:"A sales page is really important for digital products. Many leads want to review all the details before purchasing — build one as soon as possible."};
+    }
+  },
+  { id:"sales_page_cvr", section:"Sales Page", text:"What is your sales page conversion rate over the last 3 months?",
+    choices:["Less than 5%","5–10%","10–20%","20–30%","30–40%","Over 40%","I don't know"],
+    score:(v)=>{
+      if(["Less than 5%","5–10%"].includes(v)) return {priority:"high",advice:"Your sales page isn't converting well yet. Start optimizing — benefits framing, testimonials, urgency, mobile experience. Also check whether you're bringing the right audience to the page."};
+      if(["10–20%","20–30%"].includes(v)) return {priority:"medium",advice:"You're doing well. Even small improvements here have outsized revenue impact since it's bottom-of-funnel. Make this your top medium priority."};
+      if(v==="I don't know") return {priority:"high",advice:"You need this data. Your sales page conversion rate is one of the highest-leverage metrics in your funnel."};
+      return {priority:"low",advice:"Strong conversion rate. If you're not hitting revenue goals, the answer is simply getting more qualified traffic to this page."};
+    }
+  },
+  { id:"has_order_bump", section:"Cart", text:"Do you have an order bump or upsell in your checkout flow?",
+    choices:["Yes — order bump and/or upsell","No, but I have a product that could work","No"],
+    score:(v)=>{
+      if(v==="Yes — order bump and/or upsell") return {priority:"low",advice:"An order bump or upsell increases your Average Order Value and overall revenue. Great that you have this in place."};
+      if(v==="No, but I have a product that could work") return {priority:"medium",advice:"If you have a product that fits naturally as a next step, test adding it as an order bump or upsell. The AOV impact can be meaningful."};
+      return {priority:"medium",advice:"Not every funnel needs an upsell, but if you have a product that fits well as a next logical step for buyers, it's worth testing. The revenue impact can be significant."};
+    }
+  }
+];
+
+const SYSTEM_PROMPT = `You are the EHM Funnel Audit Assistant, built by Elevate Her Marketing — a fractional marketing consultancy run by Frannie Coggeshall with 16+ years in digital marketing and $20M+ generated for clients including Christina Galbato and Sam Vander Wielen.
+
+You have just completed a detailed funnel audit with the user and given them a personalized roadmap. Now you answer their follow-up questions.
+
+Tone: peer-level practitioner, not a teacher. Direct, specific, warm but no fluff. No exclamation points. No em dashes. No vague closers. Short and punchy unless depth is genuinely needed.
+
+Core expertise: Meta/Facebook and Instagram paid ads, marketing funnels for digital products and online courses, email marketing (sequences, open rates, deliverability, nurturing), lead magnets (webinars, ebooks), opt-in pages, sales pages, checkout optimization, offer stacking, customer lifetime value, funnel analytics, ad copywriting, customer ascension paths.
+
+Always reference the user's specific audit answers when relevant. Be concrete and actionable. If something is outside your expertise, say so briefly and redirect to what you can help with.`;
+
+let auditAnswers = {};
+let auditRoadmap = [];
+let currentQuestionIndex = 0;
+let phase = "welcome";
+let conversationHistory = [];
+let isLoading = false;
+
+const chatContainer = document.getElementById("chatContainer");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const progressBar = document.getElementById("progressBar");
+const progressLabel = document.getElementById("progressLabel");
+
+function updateProgress() {
+  const pct = Math.round((currentQuestionIndex / QUESTIONS.length) * 100);
+  progressBar.style.width = pct + "%";
+  progressLabel.textContent = currentQuestionIndex + " / " + QUESTIONS.length;
+}
+
+function addMessage(role, contentEl) {
+  const wrap = document.createElement("div");
+  wrap.className = "bubble-wrap " + role;
+  const label = document.createElement("div");
+  label.className = "bubble-label";
+  label.textContent = role === "user" ? "You" : "EHM Audit";
+  wrap.appendChild(label);
+  const bubble = document.createElement("div");
+  bubble.className = "bubble " + role;
+  if (typeof contentEl === "string") {
+    bubble.innerHTML = contentEl;
+  } else {
+    bubble.appendChild(contentEl);
+  }
+  wrap.appendChild(bubble);
+  chatContainer.appendChild(wrap);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  return bubble;
+}
+
+function addDivider(text) {
+  const div = document.createElement("div");
+  div.className = "section-divider";
+  div.textContent = text;
+  chatContainer.appendChild(div);
+}
+
+function addTypingIndicator() {
+  const wrap = document.createElement("div");
+  wrap.className = "bubble-wrap bot";
+  wrap.id = "typing-indicator";
+  const label = document.createElement("div");
+  label.className = "bubble-label";
+  label.textContent = "EHM Audit";
+  wrap.appendChild(label);
+  const bubble = document.createElement("div");
+  bubble.className = "bubble bot";
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  wrap.appendChild(bubble);
+  chatContainer.appendChild(wrap);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const t = document.getElementById("typing-indicator");
+  if (t) t.remove();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showQuestion(index) {
+  if (index >= QUESTIONS.length) { showRoadmap(); return; }
+  const q = QUESTIONS[index];
+  if (index === 0 || QUESTIONS[index-1].section !== q.section) {
+    addDivider(q.section + " Audit");
+  }
+  const wrap = document.createElement("div");
+  const qText = document.createElement("p");
+  qText.textContent = q.text;
+  wrap.appendChild(qText);
+  const grid = document.createElement("div");
+  grid.className = "choices-grid";
+  q.choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = choice;
+    btn.addEventListener("click", () => handleChoice(choice, index, btn, grid));
+    grid.appendChild(btn);
+  });
+  wrap.appendChild(grid);
+  addMessage("bot", wrap);
+  updateProgress();
+}
+
+async function handleChoice(value, index, btn, grid) {
+  Array.from(grid.children).forEach(b => { b.disabled = true; if (b === btn) b.classList.add("selected"); });
+  const q = QUESTIONS[index];
+  auditAnswers[q.id] = value;
+  const result = q.score(value);
+  auditRoadmap.push({ section: q.section, question: q.text, answer: value, priority: result.priority, advice: result.advice });
+  addMessage("user", `<p>${value}</p>`);
+  await sleep(300);
+  currentQuestionIndex = index + 1;
+  showQuestion(currentQuestionIndex);
+}
+
+function showRoadmap() {
+  updateProgress();
+  progressBar.style.width = "100%";
+  progressLabel.textContent = "Complete";
+  addDivider("Your Personalized Roadmap");
+
+  const highItems = auditRoadmap.filter(i => i.priority === "high");
+  const medItems = auditRoadmap.filter(i => i.priority === "medium");
+  const lowItems = auditRoadmap.filter(i => i.priority === "low");
+
+  const banner = document.createElement("div");
+  banner.className = "audit-complete-banner";
+  banner.innerHTML = `<h2>Your Funnel Audit is Complete</h2><p>Here's your personalized roadmap based on your answers.</p><div class="pill-group"><div class="pill" style="background:rgba(217,79,79,0.3);color:#fca5a5;">${highItems.length} High Priority</div><div class="pill" style="background:rgba(224,123,42,0.3);color:#fde68a;">${medItems.length} Medium Priority</div><div class="pill" style="background:rgba(161,214,183,0.3);color:#a1d6b7;">${lowItems.length} Looking Good</div></div>`;
+  chatContainer.appendChild(banner);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  const roadmapEl = document.createElement("div");
+
+  function buildSection(items, priority, label) {
+    if (!items.length) return;
+    const sec = document.createElement("div");
+    sec.className = "priority-section";
+    const badge = document.createElement("div");
+    badge.className = "priority-badge badge-" + priority;
+    badge.textContent = label;
+    sec.appendChild(badge);
+    items.forEach(item => {
+      const el = document.createElement("div");
+      el.className = "roadmap-item " + priority;
+      el.innerHTML = `<div class="item-area">${item.section}</div><div class="item-text">${item.advice}</div>`;
+      sec.appendChild(el);
+    });
+    roadmapEl.appendChild(sec);
+  }
+
+  buildSection(highItems, "high", "High Priority — Fix First");
+  buildSection(medItems, "medium", "Medium Priority — Fix Next");
+  buildSection(lowItems, "low", "Looking Good");
+
+  const closing = document.createElement("p");
+  closing.style.cssText = "margin-top:16px; font-size:14px; color:var(--text-muted);";
+  closing.textContent = "Have questions about your roadmap or want to go deeper on any of these areas? Ask below.";
+  roadmapEl.appendChild(closing);
+
+  addMessage("bot", roadmapEl);
+
+  conversationHistory.push({ role: "assistant", content: buildRoadmapSummary() });
+
+  phase = "chat";
+  userInput.disabled = false;
+  sendBtn.disabled = false;
+  userInput.placeholder = "Ask me anything about your funnel or roadmap...";
+  userInput.focus();
+}
+
+function buildRoadmapSummary() {
+  let s = "Funnel audit complete. User's full audit data:\n\n";
+  auditRoadmap.forEach(item => {
+    s += `${item.section} — ${item.question}\nAnswer: ${item.answer}\nPriority: ${item.priority.toUpperCase()}\nAdvice: ${item.advice}\n\n`;
+  });
+  s += "The personalized roadmap has been presented. The user is now in follow-up chat mode.";
+  return s;
+}
+
+async function sendChatMessage(userMsg) {
+  if (isLoading || !userMsg.trim()) return;
+  isLoading = true;
+  sendBtn.disabled = true;
+  addMessage("user", `<p>${userMsg.replace(/\n/g, "<br>")}</p>`);
+  conversationHistory.push({ role: "user", content: userMsg });
+  addTypingIndicator();
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory
+      })
+    });
+    const data = await response.json();
+    removeTypingIndicator();
+    let reply = data.content && data.content[0] ? data.content[0].text : "Something went wrong. Please try again.";
+    const formatted = reply.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>");
+    addMessage("bot", `<p>${formatted}</p>`);
+    conversationHistory.push({ role: "assistant", content: reply });
+  } catch(err) {
+    removeTypingIndicator();
+    addMessage("bot", `<p>There was a network error. Please check your connection and try again.</p>`);
+  }
+  isLoading = false;
+  sendBtn.disabled = false;
+  userInput.focus();
+}
+
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    const val = userInput.value.trim();
+    if (val) { userInput.value = ""; userInput.style.height = "42px"; sendChatMessage(val); }
+  }
+});
+
+userInput.addEventListener("input", () => {
+  userInput.style.height = "42px";
+  userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
+});
+
+sendBtn.addEventListener("click", () => {
+  const val = userInput.value.trim();
+  if (val) { userInput.value = ""; userInput.style.height = "42px"; sendChatMessage(val); }
+});
+
+async function init() {
+  await sleep(400);
+  addMessage("bot", `<h3>Welcome to the EHM Funnel Audit Tool</h3><p>I'm going to walk you through a quick audit of your digital product funnel across 6 key areas: marketing, funnel setup, webinar, opt-in page, email sequences, and sales page.</p><p>At the end, you'll get a personalized roadmap with High, Medium, and Low priority items — and you can ask me anything after.</p><p>This takes about 3–5 minutes. Let's get into it.</p>`);
+  await sleep(600);
+  showQuestion(0);
+}
+
+init();
+</script>
+</body>
+</html>
